@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>设备维修台账 v1.1.1</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: system-ui, "微软雅黑", "Segoe UI", Arial, sans-serif;
+            margin: 0;
+            padding: 12px 12px calc(30px + env(safe-area-inset-bottom));
+            background: #f0f4fa;
+            font-size: 14px;
+            color: #1a2332;
+        }
+        .stats-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: white;
+            border-radius: 24px;
+            padding: 12px 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            justify-content: center;
+        }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+            background: #f8fafc;
+            padding: 6px 16px;
+            border-radius: 40px;
+        }
+        .stat-item .num { font-weight: 700; font-size: 18px; color: #0077ff; }
+        .stat-item .num.red { color: #ef4444; }
+        .stat-item .num.green { color: #10b981; }
+        .stat-item .num.orange { color: #f59e0b; }
+        .stat-icon { font-size: 18px; }
+        .section {
+            margin: 14px 0;
+            padding: 12px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            transition: 0.2s;
+        }
+        h2 {
+            font-size: 17px;
+            margin: 0 0 10px 0;
+            color: #0077ff;
+            border-left: 4px solid #0077ff;
+            padding-left: 10px;
+            font-weight: 600;
+        }
+        label { display: block; margin: 6px 0 4px; font-size: 13px; font-weight: 500; color: #334155; }
+        .flex-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .flex-col { flex: 1; min-width: 140px; }
+        .combobox-wrap { position: relative; width: 100%; }
+        .combobox-input { width: 100%; padding: 8px 32px 8px 12px; border: 1px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: #ffffff; transition: 0.2s; }
+        .combobox-input:focus { outline: none; border-color: #0077ff; box-shadow: 0 0 0 2px rgba(0,119,255,0.1); }
+        .combobox-arrow { position: absolute; right: 0; top: 0; bottom: 0; width: 32px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 0 14px 14px 0; }
+        .combobox-arrow::after { content: "⌵"; font-size: 18px; font-weight: bold; color: #7c8b9c; }
+        .combobox-options { position: absolute; top: 100%; left: 0; right: 0; border: 1px solid #e2e8f0; border-top: none; background: #fff; max-height: 200px; overflow-y: auto; z-index: 999; display: none; border-radius: 0 0 14px 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .combobox-options div { padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
+        .combobox-options div:hover { background: #eef6ff; }
+        .btn-group { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 2px; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; border-radius: 30px; background: #f1f5f9; border: none; font-weight: 500; cursor: pointer; min-width: 60px; text-align: center; }
+        button, .btn-sm, .btn-add, .btn-edit, .btn-move, .btn-back, .btn-del {
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            transition: 0.2s;
+            margin: 2px 2px;
+            min-width: 70px;
+            text-align: center;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        @media (max-width: 640px) {
+            button, .btn-sm, .btn-add, .btn-edit, .btn-move, .btn-back, .btn-del {
+                flex: 1 0 auto;
+                min-width: 0;
+            }
+        }
+        .btn-add { background-color: #0077ff; color: white; }
+        .btn-add:hover { background-color: #0066dd; }
+        .btn-edit { background-color: #f59e0b; color: #1e293b; }
+        .btn-edit:hover { background-color: #d9920a; }
+        .btn-move { background-color: #10b981; color: white; }
+        .btn-move:hover { background-color: #059669; }
+        .btn-back { background-color: #f97316; color: white; }
+        .btn-back:hover { background-color: #ea580c; }
+        .btn-del { background-color: #ef4444; color: white; }
+        .btn-del:hover { background-color: #dc2626; }
+        .btn-settings { background-color: #8b5cf6; color: white; }
+        .btn-settings:hover { background-color: #7c3aed; }
+        .card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; justify-content: flex-start; }
+        .card-actions button { flex: 1; min-width: 60px; margin: 0; }
+        .card-list { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 2px; }
+        .record-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 14px 16px;
+            border: 1px solid #edf2f7;
+            transition: all 0.2s ease;
+            animation: fadeInUp 0.3s ease;
+        }
+        .record-card.removing { opacity: 0; transform: scale(0.95); pointer-events: none; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .record-card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+        .record-card-header .device-no { font-size: 20px; font-weight: 700; color: #0f172a; letter-spacing: 0.5px; }
+        .record-card-header .team-badge { font-size: 12px; background: #eef3fe; padding: 2px 12px; border-radius: 30px; color: #0077ff; font-weight: 500; }
+        .record-card .fault-text { font-size: 15px; color: #1e293b; margin: 4px 0 2px; padding-left: 2px; }
+        .status-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 30px;
+            margin-left: 6px;
+        }
+        .status-tag.repair { background: #fee2e2; color: #dc2626; }
+        .status-tag.fixed { background: #d1fae5; color: #059669; }
+        .status-tag.history { background: #e0e7ff; color: #4f46e5; }
+        .record-info { display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-top: 4px; }
+        .info-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+        .info-label { font-weight: 600; color: #5b6e8c; min-width: 65px; }
+        .info-value { color: #1e293b; word-break: break-word; flex: 1; }
+        .empty-tip { text-align: center; padding: 24px 16px; color: #94a3b8; font-size: 13px; background: #fafcff; border-radius: 24px; }
+        .search-bar { background: #f8fafc; border-radius: 20px; padding: 12px; margin-bottom: 14px; }
+        .filter-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; margin-top: 10px; }
+        .filter-buttons button { flex: 1; min-width: 0; }
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 14px;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 4px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: transparent;
+            border-radius: 32px;
+            padding: 6px 14px;
+            color: #475569;
+            font-weight: 500;
+            margin: 0;
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+        .tab-btn.active { background: #0077ff; color: white; box-shadow: 0 1px 3px rgba(0,119,255,0.2); }
+        .tab-btn:active { transform: scale(0.97); }
+        #dailyReport {
+            background: #f8fafc;
+            padding: 16px 18px;
+            border-radius: 18px;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid #eef2f8;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            color: #0f172a;
+        }
+        .modal-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-container { background: white; width: 90%; max-width: 520px; border-radius: 28px; padding: 16px; box-shadow: 0 20px 35px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; position: relative; font-size: 13px; animation: slideUp 0.25s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-container h3 { margin-top: 0; margin-bottom: 12px; font-size: 18px; }
+        .close-modal { position: absolute; top: 10px; right: 14px; font-size: 26px; cursor: pointer; color: #888; line-height: 1; background: none; border: none; padding: 0; min-width: 0; }
+        .close-modal:hover { color: #000; }
+        .modal-field { margin-bottom: 14px; }
+        .modal-field label { display: block; margin-bottom: 4px; font-weight: 500; font-size: 12px; }
+        .modal-field select, .modal-field input { width: 100%; padding: 8px; border-radius: 14px; border: 1px solid #ccc; font-size: 13px; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .inline-hint { font-size: 11px; color: #6c86a3; margin-top: 4px; }
+        .shift-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .shift-date-control { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .shift-date-control input { padding: 6px 10px; border-radius: 30px; border: 1px solid #ccc; font-size: 14px; }
+        .shift-subnav { display: flex; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
+        .shift-subtab { background: none; border: none; padding: 6px 14px; font-size: 14px; font-weight: 500; color: #475569; cursor: pointer; border-radius: 24px 24px 0 0; }
+        .shift-subtab.active { color: #0077ff; border-bottom: 2px solid #0077ff; background: #f0f7ff; }
+        .shift-block { margin-bottom: 16px; }
+        .shift-block-title { font-size: 15px; font-weight: 600; color: #1e466e; background: #eef3fe; padding: 4px 14px; border-radius: 24px; display: inline-block; margin-bottom: 8px; }
+        .person-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 6px; }
+        .person-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .person-card:hover { background: #f8fafc; border-color: #b0c4de; }
+        .person-card .top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .person-card .name { font-weight: 600; font-size: 14px; }
+        .person-card .role { font-size: 12px; color: #5b6e8c; }
+        .phone-link {
+            background: #e6f4ea;
+            padding: 2px 8px;
+            border-radius: 24px;
+            text-decoration: none;
+            font-size: 0.75rem;
+            color: #1e6f3f;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            pointer-events: auto;
+        }
+        .phone-link:hover { background: #c8e6d9; }
+        .recognize-box { background: #f0f9ff; border-radius: 18px; padding: 12px; margin-bottom: 16px; }
+        .recognize-box textarea { width: 100%; padding: 10px; border-radius: 14px; border: 1px solid #ccc; font-size: 13px; font-family: monospace; resize: vertical; }
+        .query-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; align-items: flex-end; }
+        .query-buttons .date-input { flex: 1; min-width: 140px; }
+        .query-buttons .date-input input { width: 100%; padding: 6px 10px; border-radius: 30px; border: 1px solid #cbd5e1; font-size: 13px; }
+        .query-buttons button { flex: 1; margin: 0; }
+        @media (min-width: 768px) { .query-buttons { flex-wrap: nowrap; } }
+        .picker-list { max-height: 180px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 14px; margin-top: 6px; }
+        .picker-list div { padding: 6px 10px; cursor: pointer; border-bottom: 1px solid #eef2f8; font-size: 12px; }
+        .picker-list div:hover { background: #eef6ff; }
+        .team-config-item { background: #f8fafc; border-radius: 14px; padding: 10px; margin-bottom: 10px; }
+        .data-manage-buttons { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .data-manage-buttons button { flex: 1; }
+        @media (max-width: 480px) {
+            .stats-bar { gap: 6px; padding: 10px 12px; }
+            .stat-item { font-size: 12px; padding: 4px 12px; }
+            .stat-item .num { font-size: 15px; }
+        }
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 8px 0;
+        }
+        .settings-grid button { min-width: 0; padding: 10px 8px; font-size: 13px; width: 100%; }
+        @media (max-width: 480px) { .settings-grid { grid-template-columns: 1fr; } }
+        .settings-grid .full-width { grid-column: 1 / -1; }
+        .version-tag { text-align: center; font-size: 11px; color: #94a3b8; margin-top: 10px; padding-top: 8px; border-top: 1px solid #eef2f8; }
+        .shift-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    </style>
+</head>
+<body>
+    <div class="stats-bar" id="statsBar">
+        <span class="stat-item"><span class="stat-icon">🚛</span> 在修：<span class="num red" id="statRepair">0</span>台</span>
+        <span class="stat-item"><span class="stat-icon">✅</span> 今日修复：<span class="num green" id="statFixed">0</span>台</span>
+        <span class="stat-item"><span class="stat-icon">📋</span> 总记录：<span class="num" id="statTotal">0</span>条</span>
+    </div>
+
+    <div class="tab-nav">
+        <button class="tab-btn active" id="tabRepairBtn" onclick="switchPanel('repair')">📋 在修故障</button>
+        <button class="tab-btn" id="tabFixedBtn" onclick="switchPanel('fixed')">✅ 今日修复</button>
+        <button class="tab-btn" id="tabHistoryBtn" onclick="switchPanel('history')">📜 历史记录</button>
+        <button class="tab-btn" id="tabShiftBtn" onclick="switchPanel('shift')">👤 当班人员</button>
+    </div>
+
+    <div id="panelRepair" class="panel-content" style="display:block;">
+        <div class="section">
+            <h2>🔍 智能识别（粘贴群消息）</h2>
+            <div class="recognize-box">
+                <textarea id="recognizeText" rows="3" placeholder="粘贴故障消息，例如：&#10;车号：A01&#10;故障：添加液压油&#10;司机：徐XX&#10;电话：13XXXXXXXXX"></textarea>
+                <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                    <button class="btn-add" onclick="parseAndFill()">解析并填充</button>
+                    <button class="btn-edit" onclick="clearRecognize()">清空</button>
+                </div>
+                <div id="parseResult" class="inline-hint" style="margin-top: 6px;"></div>
+            </div>
+        </div>
+        <div class="section">
+            <h2>📝 录入新故障</h2>
+            <div class="flex-row">
+                <div class="flex-col"><label>所属班组</label><div class="combobox-wrap" id="teamWrap"><input type="text" class="combobox-input" id="teamInput" placeholder="选择或输入班组"><div class="combobox-arrow" onclick="toggleOptions('teamWrap')"></div><div class="combobox-options" id="teamOptions"></div></div><div class="btn-group"><button class="btn-sm btn-add" onclick="addOption('team')">添加</button><button class="btn-sm btn-del" onclick="delOption('team')">删除</button></div></div>
+                <div class="flex-col"><label>设备编号/车号</label><div class="combobox-wrap" id="deviceWrap"><input type="text" class="combobox-input" id="deviceInput" placeholder="例如 A01"><div class="combobox-arrow" onclick="toggleOptions('deviceWrap')"></div><div class="combobox-options" id="deviceOptions"></div></div><div class="btn-group"><button class="btn-sm btn-add" onclick="addOption('device')">添加</button><button class="btn-sm btn-del" onclick="delOption('device')">删除</button></div></div>
+            </div>
+            <label>故障内容</label>
+            <div class="combobox-wrap" id="faultWrap"><input type="text" class="combobox-input" id="faultInput" placeholder="简要描述故障"><div class="combobox-arrow" onclick="toggleOptions('faultWrap')"></div><div class="combobox-options" id="faultOptions"></div></div>
+            <div class="btn-group"><button class="btn-sm btn-add" onclick="addOption('fault')">添加故障模板</button><button class="btn-sm btn-del" onclick="delOption('fault')">删除故障模板</button></div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px;">
+                <button class="btn-add" style="flex:1" onclick="addFault()">添加故障（在修）</button>
+                <button class="btn-edit" style="flex:1" onclick="clearForm()">清空表单</button>
+            </div>
+        </div>
+        <div class="section">
+            <h2>⚙️ 当前在修故障</h2>
+            <div id="repairCardContainer" class="card-list"></div>
+        </div>
+    </div>
+
+    <div id="panelFixed" class="panel-content" style="display:none;">
+        <div class="section"><h2>✅ 今日已修复设备</h2><div id="fixedCardContainer" class="card-list"></div></div>
+    </div>
+
+    <div id="panelHistory" class="panel-content" style="display:none;">
+        <div class="section">
+            <h2>📜 历史修复记录查询</h2>
+            <div class="search-bar">
+                <div class="query-buttons">
+                    <div class="date-input"><input type="date" id="historyDate" value=""></div>
+                    <button class="btn-edit" onclick="showTeamPickerModal()"><span>班组</span><span id="selectedTeamText">全部</span></button>
+                    <button class="btn-edit" onclick="showDevicePickerModal()"><span>车号</span><span id="selectedDeviceText">全部</span></button>
+                </div>
+                <div class="filter-buttons">
+                    <button class="btn-add" style="flex:1" onclick="searchHistory()">查询</button>
+                    <button class="btn-edit" style="flex:1" onclick="resetHistorySearch()">重置</button>
+                    <button class="btn-move" style="flex:1" onclick="generateHistoryReport()">生成报表</button>
+                </div>
+            </div>
+            <div id="historyResultArea" class="history-card-list"></div>
+        </div>
+    </div>
+
+    <div id="panelShift" class="panel-content" style="display:none;">
+        <div class="section">
+            <h2>👤 当班人员查询</h2>
+            <div class="shift-header">
+                <div class="shift-date-control">
+                    <button class="btn-sm" onclick="changeDate(-1)">前一天</button>
+                    <input type="date" id="shiftDate">
+                    <button class="btn-sm" onclick="changeDate(1)">后一天</button>
+                    <button class="btn-add" onclick="setTodayShift()">今天</button>
+                </div>
+                <div>
+                    <button class="btn-add btn-sm" onclick="showPersonnelManager()">📋 管理所有人员</button>
+                </div>
+            </div>
+            <div class="shift-subnav">
+                <button class="shift-subtab active" data-subtab="day" onclick="switchShiftSubtab('day')">常白人员</button>
+                <button class="shift-subtab" data-subtab="shift" onclick="switchShiftSubtab('shift')">倒班人员</button>
+            </div>
+            <div id="shiftDayContainer" class="shift-subcontent"></div>
+            <div id="shiftShiftContainer" class="shift-subcontent" style="display:none"></div>
+        </div>
+    </div>
+
+    <div id="reportSection" class="section">
+        <h2>📄 台账与数据管理</h2>
+        <div class="data-manage-buttons">
+            <button class="btn-add" style="flex:1" onclick="generateReport()">生成台账</button>
+            <button class="btn-edit" style="flex:1" onclick="copyReport()">复制台账</button>
+            <button class="btn-settings" style="flex:1" onclick="showGlobalSettings()">⚙️ 设置</button>
+            <button class="btn-del" style="flex:1" onclick="clearAllData()">清空数据</button>
+        </div>
+        <div id="dailyReport">点击生成今日台账报表...</div>
+    </div>
+
+    <script>
+        // ============================================================
+        // 模块1：基础工具与数据
+        // ============================================================
+        var faults = (function() {
+            try { return JSON.parse(localStorage.getItem('faults')) || []; } catch(e) { return []; }
+        })();
+        var todayDate = new Date();
+        var displayDateStr = todayDate.getFullYear() + '年' + (todayDate.getMonth()+1) + '月' + todayDate.getDate() + '日';
+        var TEAM_ORDER = ['流机一班','流机二班','操作班','装卸班']; // 保留用于其他可能的地方，但报表不再使用
+
+        var customOptions = (function() {
+            try {
+                var opts = JSON.parse(localStorage.getItem('customOptions'));
+                if (opts && opts.team && opts.team.length) return opts;
+            } catch(e) {}
+            return { team: ['流机一班','流机二班','操作班','装卸班'], device: [], fault: [] };
+        })();
+
+        function saveOptions(){ try { localStorage.setItem('customOptions', JSON.stringify(customOptions)); } catch(e) {} }
+        function renderOptions(type){
+            var optionsEl = document.getElementById(type + 'Options');
+            if(optionsEl){
+                optionsEl.innerHTML = '';
+                (customOptions[type] || []).forEach(function(text){
+                    var div = document.createElement('div');
+                    div.textContent = text;
+                    div.onclick = function(){ selectOption(type + 'Wrap', text); };
+                    optionsEl.appendChild(div);
+                });
+            }
+            if(type === 'team'){
+                var teamDatalist = document.getElementById('historyTeamDatalist');
+                if(teamDatalist){
+                    teamDatalist.innerHTML = '';
+                    customOptions.team.forEach(function(t){
+                        var opt = document.createElement('option');
+                        opt.value = t;
+                        teamDatalist.appendChild(opt);
+                    });
+                }
+            }
+            if(type === 'device'){
+                var deviceDatalist = document.getElementById('historyDeviceDatalist');
+                if(deviceDatalist){
+                    deviceDatalist.innerHTML = '';
+                    customOptions.device.forEach(function(d){
+                        var opt = document.createElement('option');
+                        opt.value = d;
+                        deviceDatalist.appendChild(opt);
+                    });
+                }
+            }
+        }
+        function renderAllOptions(){
+            ['team','device','fault'].forEach(renderOptions);
+            var teamDatalist = document.getElementById('historyTeamDatalist');
+            if(teamDatalist){
+                teamDatalist.innerHTML = '';
+                customOptions.team.forEach(function(t){
+                    var opt = document.createElement('option');
+                    opt.value = t;
+                    teamDatalist.appendChild(opt);
+                });
+            }
+            var deviceDatalist = document.getElementById('historyDeviceDatalist');
+            if(deviceDatalist){
+                deviceDatalist.innerHTML = '';
+                customOptions.device.forEach(function(d){
+                    var opt = document.createElement('option');
+                    opt.value = d;
+                    deviceDatalist.appendChild(opt);
+                });
+            }
+        }
+        function addOption(type){
+            var input = document.getElementById(type + 'Input');
+            var text = input.value.trim();
+            if(!text) return alert('请输入内容');
+            if(!customOptions[type]) customOptions[type] = [];
+            if(customOptions[type].includes(text)) return alert('已存在');
+            customOptions[type].push(text);
+            saveOptions();
+            renderOptions(type);
+            alert('添加成功');
+        }
+        function delOption(type){
+            var input = document.getElementById(type + 'Input');
+            var text = input.value.trim();
+            if(!text || !customOptions[type] || !customOptions[type].includes(text)) return alert('请在输入框中填写需要删除的准确名称');
+            if(!confirm('确定删除「' + text + '」？')) return;
+            customOptions[type] = customOptions[type].filter(function(item){ return item !== text; });
+            saveOptions();
+            renderOptions(type);
+            input.value = '';
+            alert('已删除');
+        }
+        function toggleOptions(wrapId){
+            var wrap = document.getElementById(wrapId);
+            var options = wrap.querySelector('.combobox-options');
+            document.querySelectorAll('.combobox-options').forEach(function(opt){
+                if(opt !== options) opt.style.display = 'none';
+            });
+            options.style.display = options.style.display === 'block' ? 'none' : 'block';
+        }
+        function selectOption(wrapId, text){
+            var wrap = document.getElementById(wrapId);
+            wrap.querySelector('.combobox-input').value = text;
+            wrap.querySelector('.combobox-options').style.display = 'none';
+        }
+        document.addEventListener('click', function(e){
+            if(!e.target.closest('.combobox-wrap')){
+                document.querySelectorAll('.combobox-options').forEach(function(opt){
+                    opt.style.display = 'none';
+                });
+            }
+        });
+        function saveAll(){
+            try { localStorage.setItem('faults', JSON.stringify(faults)); } catch(e) {}
+        }
+        function escapeHtml(str){
+            if(!str) return '';
+            return str.replace(/[&<>]/g, function(m){
+                if(m === '&') return '&amp;';
+                if(m === '<') return '&lt;';
+                if(m === '>') return '&gt;';
+                return m;
+            });
+        }
+        function naturalSort(arr, key) {
+            return arr.sort(function(a, b) {
+                var va = key ? a[key] : a;
+                var vb = key ? b[key] : b;
+                var na = va.match(/\d+/);
+                var nb = vb.match(/\d+/);
+                if (na && nb) {
+                    var prefixA = va.replace(/\d+$/, '');
+                    var prefixB = vb.replace(/\d+$/, '');
+                    if (prefixA === prefixB) {
+                        return parseInt(na[0], 10) - parseInt(nb[0], 10);
+                    }
+                }
+                return va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' });
+            });
+        }
+
+        // ============================================================
+        // 模块2：维修核心逻辑
+        // ============================================================
+        function renderCardList(containerId, items, isFixedPanel) {
+            var container = document.getElementById(containerId);
+            if(!container) return;
+            var sorted = naturalSort(items.slice(), 'device');
+            if(sorted.length === 0){
+                container.innerHTML = '<div class="empty-tip">暂无记录</div>';
+                return;
+            }
+            container.innerHTML = '';
+            sorted.forEach(function(item){
+                var card = document.createElement('div');
+                card.className = 'record-card';
+                card.setAttribute('data-id', item.id);
+                var statusTag = isFixedPanel ? '<span class="status-tag fixed">已修复</span>' : '<span class="status-tag repair">在修</span>';
+                var extraHtml = '';
+                if(isFixedPanel && item.fixDate){
+                    extraHtml = '<div class="info-row"><span class="info-label">修复日期：</span><span class="info-value">' + escapeHtml(item.fixDate) + '</span></div>';
+                }
+                card.innerHTML = `
+                    <div class="record-card-header">
+                        <span class="device-no">${escapeHtml(item.device)} ${statusTag}</span>
+                        <span class="team-badge">${escapeHtml(item.team || '未分组')}</span>
+                    </div>
+                    <div class="fault-text">${escapeHtml(item.fault)}</div>
+                    <div class="record-info">${extraHtml}</div>
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="openEditModal('${item.id}')">修改</button>
+                        ${!isFixedPanel ? '<button class="btn-move" onclick="moveToFixed(\'' + item.id + '\')">修复完成</button>' : '<button class="btn-back" onclick="moveToRepair(\'' + item.id + '\')">回修</button>'}
+                        <button class="btn-del" onclick="delFault('${item.id}')">删除</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderAllPanels(){
+            var repairing = faults.filter(function(x){ return x.status === 'repair'; });
+            var fixedToday = faults.filter(function(x){ return x.status === 'fixed' && x.fixDate === displayDateStr; });
+            renderCardList('repairCardContainer', repairing, false);
+            renderCardList('fixedCardContainer', fixedToday, true);
+            updateStats();
+        }
+
+        function updateStats(){
+            var repairCount = faults.filter(function(x){ return x.status === 'repair'; }).length;
+            var fixedCount = faults.filter(function(x){ return x.status === 'fixed' && x.fixDate === displayDateStr; }).length;
+            var total = faults.length;
+            document.getElementById('statRepair').textContent = repairCount;
+            document.getElementById('statFixed').textContent = fixedCount;
+            document.getElementById('statTotal').textContent = total;
+        }
+
+        function addFault(){
+            var team = document.getElementById('teamInput').value.trim();
+            var device = document.getElementById('deviceInput').value.trim();
+            var fault = document.getElementById('faultInput').value.trim();
+            if (!device || !fault) return alert('请填写设备编号和故障内容');
+            if (!team) team = '未指定';
+            addFaultWithMerge(team, device, fault);
+        }
+
+        function addFaultWithMerge(team, device, newFault) {
+            var existing = null;
+            for (var i = 0; i < faults.length; i++) {
+                if (faults[i].device === device && faults[i].status === 'repair') {
+                    existing = faults[i];
+                    break;
+                }
+            }
+            if (existing) {
+                if (existing.fault.indexOf(newFault) === -1) {
+                    existing.fault = existing.fault + '；' + newFault;
+                    saveAll();
+                    renderAllPanels();
+                    alert('已为车号 ' + device + ' 合并故障：' + newFault);
+                } else {
+                    alert('车号 ' + device + ' 已有相同故障内容，未重复添加');
+                }
+            } else {
+                var id = Date.now().toString();
+                faults.push({ id: id, team: team, device: device, fault: newFault, status: 'repair', fixDate: '' });
+                saveAll();
+                renderAllPanels();
+                alert('新故障已添加');
+            }
+            clearForm();
+        }
+
+        function clearForm(){
+            document.getElementById('teamInput').value = '';
+            document.getElementById('deviceInput').value = '';
+            document.getElementById('faultInput').value = '';
+        }
+
+        var currentEditId = null;
+
+        function openEditModal(id){
+            var item = null;
+            for (var i = 0; i < faults.length; i++) {
+                if (faults[i].id === id) { item = faults[i]; break; }
+            }
+            if (!item) return;
+            currentEditId = id;
+            var modalDiv = document.createElement('div');
+            modalDiv.className = 'modal-mask';
+            modalDiv.id = 'editModal';
+            var teamOptions = customOptions.team || [];
+            var deviceOptions = customOptions.device || [];
+            var teamOptHtml = teamOptions.map(function(t){
+                return '<option value="' + escapeHtml(t) + '" ' + (t === item.team ? 'selected' : '') + '>' + escapeHtml(t) + '</option>';
+            }).join('');
+            var deviceOptHtml = deviceOptions.map(function(d){
+                return '<option value="' + escapeHtml(d) + '" ' + (d === item.device ? 'selected' : '') + '>' + escapeHtml(d) + '</option>';
+            }).join('');
+            modalDiv.innerHTML = `
+                <div class="modal-container">
+                    <div class="close-modal" onclick="closeModal()">&times;</div>
+                    <h3>编辑维修记录</h3>
+                    <div class="modal-field"><label>班组</label><select id="editTeamSelect">${teamOptHtml}</select></div>
+                    <div class="modal-field"><label>设备编号</label><select id="editDeviceSelect">${deviceOptHtml}</select></div>
+                    <div class="modal-field"><label>故障内容</label><input type="text" id="editFaultInput" value="${escapeHtml(item.fault)}"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-edit" id="saveEditBtn">保存</button>
+                        <button class="btn-del" id="cancelEditBtn">取消</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+            document.getElementById('saveEditBtn').addEventListener('click', function() {
+                var newTeam = document.getElementById('editTeamSelect').value;
+                var newDevice = document.getElementById('editDeviceSelect').value;
+                var newFault = document.getElementById('editFaultInput').value.trim();
+                if (!newDevice || !newFault) {
+                    alert('设备编号与故障不能为空');
+                    return;
+                }
+                var target = null;
+                for (var j = 0; j < faults.length; j++) {
+                    if (faults[j].id === currentEditId) { target = faults[j]; break; }
+                }
+                if (target) {
+                    target.team = newTeam;
+                    target.device = newDevice;
+                    target.fault = newFault;
+                    saveAll();
+                    renderAllPanels();
+                    if (document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+                    generateReport();
+                }
+                closeModal();
+            });
+            document.getElementById('cancelEditBtn').addEventListener('click', closeModal);
+            modalDiv.addEventListener('click', function(e) {
+                if (e.target === modalDiv) closeModal();
+            });
+        }
+
+        function closeModal(){
+            var modal = document.getElementById('editModal');
+            if (modal) modal.remove();
+            currentEditId = null;
+        }
+
+        function moveToFixed(id){
+            var item = null;
+            for (var i = 0; i < faults.length; i++) {
+                if (faults[i].id === id) { item = faults[i]; break; }
+            }
+            if(item && item.status === 'repair'){
+                item.status = 'fixed';
+                item.fixDate = displayDateStr;
+                saveAll();
+                renderAllPanels();
+                if(document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+                generateReport();
+            }
+        }
+
+        function moveToRepair(id){
+            var item = null;
+            for (var i = 0; i < faults.length; i++) {
+                if (faults[i].id === id) { item = faults[i]; break; }
+            }
+            if(item && item.status === 'fixed'){
+                item.status = 'repair';
+                item.fixDate = '';
+                saveAll();
+                renderAllPanels();
+                if(document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+                generateReport();
+            }
+        }
+
+        function delFault(id){
+            if(!confirm('永久删除该记录？')) return;
+            var card = document.querySelector('.record-card[data-id="' + id + '"]');
+            if(card) {
+                card.classList.add('removing');
+                setTimeout(function() {
+                    faults = faults.filter(function(f){ return f.id !== id; });
+                    saveAll();
+                    renderAllPanels();
+                    if(document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+                    generateReport();
+                }, 250);
+            } else {
+                faults = faults.filter(function(f){ return f.id !== id; });
+                saveAll();
+                renderAllPanels();
+                if(document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+                generateReport();
+            }
+        }
+
+        // ============================================================
+        // 模块3：报表与台账（动态班组顺序）
+        // ============================================================
+        // 辅助函数：获取所有记录中出现的班组，按 customOptions.team 顺序排列，其余按首次出现顺序
+        function getTeamOrder(records) {
+            var allTeams = [];
+            records.forEach(function(r) {
+                if (r.team && allTeams.indexOf(r.team) === -1) {
+                    allTeams.push(r.team);
+                }
+            });
+            var order = [];
+            // 先放 customOptions.team 中已有的
+            customOptions.team.forEach(function(t) {
+                if (allTeams.indexOf(t) !== -1) {
+                    order.push(t);
+                }
+            });
+            // 再放 customOptions.team 中没有的
+            allTeams.forEach(function(t) {
+                if (order.indexOf(t) === -1) {
+                    order.push(t);
+                }
+            });
+            return order;
+        }
+
+        function generateReport(){
+            var repair = faults.filter(function(x){ return x.status === 'repair'; });
+            var fixedToday = faults.filter(function(x){ return x.status === 'fixed' && x.fixDate === displayDateStr; });
+            var repairSorted = naturalSort(repair.slice(), 'device');
+            var fixedSorted = naturalSort(fixedToday.slice(), 'device');
+
+            var report = displayDateStr + '\n';
+report += '东区装载机班设备维修台账\n';
+report += '设备共28台，曲臂吊1台（曲15）\n';
+report += '装载机27台，其中集3台，疏17台+5台（A06，A10，A79，A80，A85无磅秤），国二停用设备2台（A68，A83）\n\n';
+
+
+            // ---- 在修部分 ----
+            var allRepairTeams = getTeamOrder(repairSorted);
+            report += '一、当前在修（' + repair.length + '台）\n';
+            allRepairTeams.forEach(function(team){
+                var items = repairSorted.filter(function(r){ return r.team === team; });
+                if(items.length > 0){
+                    report += '【' + team + '】' + '（' + items.length + '台）\n';
+                    items.forEach(function(item, idx){
+                        var num = (idx+1).toString().padStart(2, ' ');
+                        report += num+'. ' + item.device + ':' + item.fault + '\n';
+                    });
+                    report += '\n';
+                }
+            });
+            // 若存在 team 为空的记录（不应出现），可单独处理，但一般不会
+
+            // ---- 今日修复部分 ----
+            var allFixedTeams = getTeamOrder(fixedSorted);
+            report += '二、今日修复（' + fixedToday.length + '台）\n';
+            allFixedTeams.forEach(function(team){
+                var items = fixedSorted.filter(function(r){ return r.team === team; });
+                if(items.length > 0){
+                    report += '【' + team + '】' + '（' + items.length + '台）\n';
+                    items.forEach(function(item, idx){
+                        var num = (idx+1).toString().padStart(2, ' ');
+                        report += num+'. ' + item.device + ':' + item.fault + '\n';
+                    });
+                    report += '\n';
+                }
+            });
+
+            document.getElementById('dailyReport').textContent = report;
+        }
+
+        function copyReport(){
+            var text = document.getElementById('dailyReport').textContent;
+            if(!text || text === '点击生成今日台账报表...') return alert('请先生成台账');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function(){
+                    alert('台账已复制');
+                }).catch(function(){
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+        function fallbackCopy(text){
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try { document.execCommand('copy'); alert('台账已复制'); } catch(e) { alert('复制失败，请手动复制'); }
+            document.body.removeChild(textarea);
+        }
+
+        function clearAllData(){
+            if(!confirm('彻底清空所有维修记录？数据无法恢复！')) return;
+            faults = [];
+            customOptions = { team: ['流机一班','流机二班','操作班','装卸班'], device: [], fault: [] };
+            saveOptions();
+            saveAll();
+            renderAllOptions();
+            renderAllPanels();
+            document.getElementById('dailyReport').textContent = '';
+            if(document.getElementById('panelHistory').style.display !== 'none') searchHistory();
+            alert('维修数据已清空');
+        }
+
+        // ============================================================
+        // 模块4：历史查询
+        // ============================================================
+        function getAllFixedRecords(){ return faults.filter(function(f){ return f.status === 'fixed'; }); }
+        var selectedDate = '';
+        var selectedTeam = '';
+        var selectedDevice = '';
+
+        function updateFilterDisplay() {
+            document.getElementById('selectedTeamText').innerText = selectedTeam || '全部';
+            document.getElementById('selectedDeviceText').innerText = selectedDevice || '全部';
+        }
+
+        function searchHistory(){
+            var dateInput = document.getElementById('historyDate');
+            selectedDate = dateInput.value;
+            var filtered = getAllFixedRecords();
+            if(selectedDate){
+                var d = new Date(selectedDate);
+                var targetStr = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
+                filtered = filtered.filter(function(item){ return item.fixDate === targetStr; });
+            }
+            if(selectedTeam && selectedTeam !== '全部'){
+                filtered = filtered.filter(function(item){ return item.team && item.team.indexOf(selectedTeam) !== -1; });
+            }
+            if(selectedDevice && selectedDevice !== '全部'){
+                filtered = filtered.filter(function(item){ return item.device && item.device.toLowerCase().indexOf(selectedDevice.toLowerCase()) !== -1; });
+            }
+            filtered = naturalSort(filtered, 'device');
+            renderHistoryCards(filtered);
+        }
+
+        function resetHistorySearch(){
+            document.getElementById('historyDate').value = '';
+            selectedDate = '';
+            selectedTeam = '';
+            selectedDevice = '';
+            updateFilterDisplay();
+            searchHistory();
+        }
+
+        function renderHistoryCards(records){
+            var container = document.getElementById('historyResultArea');
+            if(!records.length){ container.innerHTML = '<div class="empty-tip">未查询到历史修复记录</div>'; return; }
+            container.innerHTML = '';
+            records.forEach(function(rec){
+                var card = document.createElement('div');
+                card.className = 'record-card';
+                card.innerHTML = `
+                    <div class="record-card-header">
+                        <span class="device-no">${escapeHtml(rec.device)} <span class="status-tag history">已修复</span></span>
+                        <span class="team-badge">${escapeHtml(rec.team)}</span>
+                    </div>
+                    <div class="fault-text">${escapeHtml(rec.fault)}</div>
+                    <div class="record-info"><div class="info-row"><span class="info-label">修复日期：</span><span class="info-value">${escapeHtml(rec.fixDate)}</span></div></div>
+                    <div class="card-actions">
+                        <button class="btn-edit" onclick="openEditModal('${rec.id}')">修改</button>
+                        <button class="btn-back" onclick="moveToRepair('${rec.id}')">回修</button>
+                        <button class="btn-del" onclick="delFault('${rec.id}')">删除</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function showTeamPickerModal() {
+            var teamList = customOptions.team || [];
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>选择班组</h3>
+                    <div class="modal-field"><label>可手动输入或从列表选择</label><input type="text" id="teamPickerInput" value="${escapeHtml(selectedTeam)}" placeholder="输入或选择班组"></div>
+                    <div class="picker-list" id="teamPickerList">
+                        ${teamList.map(function(t){ return '<div onclick="selectPickerItem(\'team\', \'' + escapeHtml(t) + '\')">' + escapeHtml(t) + '</div>'; }).join('')}
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="confirmTeamBtn">确定</button>
+                        <button class="btn-del" id="cancelTeamBtn">取消</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('confirmTeamBtn').addEventListener('click', function() {
+                var val = document.getElementById('teamPickerInput').value.trim();
+                selectedTeam = val;
+                updateFilterDisplay();
+                searchHistory();
+                document.body.removeChild(modal);
+            });
+            document.getElementById('cancelTeamBtn').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        function showDevicePickerModal() {
+            var deviceList = customOptions.device || [];
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>选择车号</h3>
+                    <div class="modal-field"><label>可手动输入或从列表选择</label><input type="text" id="devicePickerInput" value="${escapeHtml(selectedDevice)}" placeholder="输入或选择车号"></div>
+                    <div class="picker-list" id="devicePickerList">
+                        ${deviceList.map(function(d){ return '<div onclick="selectPickerItem(\'device\', \'' + escapeHtml(d) + '\')">' + escapeHtml(d) + '</div>'; }).join('')}
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="confirmDeviceBtn">确定</button>
+                        <button class="btn-del" id="cancelDeviceBtn">取消</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('confirmDeviceBtn').addEventListener('click', function() {
+                var val = document.getElementById('devicePickerInput').value.trim();
+                selectedDevice = val;
+                updateFilterDisplay();
+                searchHistory();
+                document.body.removeChild(modal);
+            });
+            document.getElementById('cancelDeviceBtn').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        window.selectPickerItem = function(type, value) {
+            if(type === 'team') {
+                var input = document.getElementById('teamPickerInput');
+                if(input) input.value = value;
+            } else if(type === 'device') {
+                var input = document.getElementById('devicePickerInput');
+                if(input) input.value = value;
+            }
+        };
+        window.closeAnyModal = function(btn) {
+            var modal = btn.closest('.modal-mask');
+            if(modal) modal.remove();
+        };
+
+        function generateHistoryReport(){
+            var dateInput = document.getElementById('historyDate');
+            var selectedDateVal = dateInput.value;
+            var filtered = getAllFixedRecords();
+            if(selectedTeam && selectedTeam !== '全部') {
+                filtered = filtered.filter(function(item){ return item.team && item.team.indexOf(selectedTeam) !== -1; });
+            }
+            if(selectedDevice && selectedDevice !== '全部') {
+                filtered = filtered.filter(function(item){ return item.device && item.device.toLowerCase().indexOf(selectedDevice.toLowerCase()) !== -1; });
+            }
+            if(selectedDateVal){
+                var d = new Date(selectedDateVal);
+                var targetStr = d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日';
+                filtered = filtered.filter(function(item){ return item.fixDate === targetStr; });
+            }
+            filtered = naturalSort(filtered, 'device');
+            if(filtered.length === 0){
+                document.getElementById('dailyReport').textContent = '无符合条件的修复记录';
+                alert('无符合条件的修复记录');
+                return;
+            }
+            var hasDeviceFilter = selectedDevice && selectedDevice !== '全部';
+            function parseDateStr(str){ var m = str.match(/(\d+)年(\d+)月(\d+)日/); if(m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3])); return new Date(0); }
+            if(hasDeviceFilter){
+                var device = selectedDevice;
+                var report = '【' + device + '】历史修复记录\n';
+                filtered.sort(function(a,b){ return parseDateStr(a.fixDate) - parseDateStr(b.fixDate); });
+                filtered.forEach(function(rec){ report += rec.fixDate + '：' + rec.fault + '\n'; });
+                document.getElementById('dailyReport').textContent = report;
+                alert('车号 ' + device + ' 的修复记录已生成');
+            } else {
+                var dateGroups = {};
+                filtered.forEach(function(rec){
+                    var dateKey = rec.fixDate;
+                    if(!dateGroups[dateKey]) dateGroups[dateKey] = {};
+                    if(!dateGroups[dateKey][rec.team]) dateGroups[dateKey][rec.team] = [];
+                    dateGroups[dateKey][rec.team].push(rec);
+                });
+                var sortedDates = Object.keys(dateGroups).sort(function(a,b){ return parseDateStr(a) - parseDateStr(b); });
+                var report = '━━━━━━━━━━━━\n';
+                report += '历史修复记录报表\n';
+                report += '共 ' + filtered.length + ' 条记录\n';
+                report += '━━━━━━━━━━━━\n\n';
+                sortedDates.forEach(function(dateKey){
+                    var teamMap = dateGroups[dateKey];
+                    report += dateKey + '\n';
+                    // 获取该日期所有班组并排序
+                    var teamsInDate = Object.keys(teamMap).filter(function(t){ return t; });
+                    // 使用所有记录中提取的顺序（优先 customOptions.team）
+                    var orderedTeams = getTeamOrder(filtered);
+                    var currentOrder = [];
+                    orderedTeams.forEach(function(t){
+                        if (teamsInDate.indexOf(t) !== -1) {
+                            currentOrder.push(t);
+                        }
+                    });
+                    teamsInDate.forEach(function(t){
+                        if (currentOrder.indexOf(t) === -1) {
+                            currentOrder.push(t);
+                        }
+                    });
+                    currentOrder.forEach(function(team){
+                        if(teamMap[team] && teamMap[team].length > 0){
+                            var items = naturalSort(teamMap[team], 'device');
+                            report += '  ■ ' + team + '（' + items.length + '台）\n';
+                            items.forEach(function(item){
+                                report += '    ' + item.device + '：' + item.fault + '\n';
+                            });
+                        }
+                    });
+                    report += '\n';
+                });
+                report += '━━━━━━━━━━━━\n';
+                document.getElementById('dailyReport').textContent = report;
+                alert('汇总报表已生成');
+            }
+        }
+
+        // ============================================================
+        // 模块5：当班人员（排班模块）- 未修改，保留原样
+        // ============================================================
+        var shiftTeams = (function() {
+            try { return JSON.parse(localStorage.getItem('shift_teams2')) || []; } catch(e) { return []; }
+        })();
+        if (shiftTeams.length === 0) {
+            shiftTeams = [
+                { id: 'st1', name: '三班一组', type: '3shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st2', name: '三班二组', type: '3shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st3', name: '三班三组', type: '3shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st4', name: '四班一组', type: '4shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st5', name: '四班二组', type: '4shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st6', name: '四班三组', type: '4shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st7', name: '四班四组', type: '4shift', baseDate: '2026-06-10', baseShift: '白班' },
+                { id: 'st8', name: '常白班', type: 'day', baseDate: '2026-06-10', baseShift: '白班' }
+            ];
+        }
+        var shiftPeople = (function() {
+            try { return JSON.parse(localStorage.getItem('shift_people2')) || []; } catch(e) { return []; }
+        })();
+        var specialTeamConfig = (function() {
+            try { return JSON.parse(localStorage.getItem('specialTeamConfig3')) || {}; } catch(e) { return {}; }
+        })();
+        if (!specialTeamConfig.enabled) {
+            specialTeamConfig = {
+                enabled: false, teamName: '班长组',
+                fourPerson: { name: '', role: '', phone: '', baseDate: '2026-06-10', baseShift: '白班' },
+                threePersons: [{ name: '', role: '', phone: '', baseDate: '2026-06-10', baseShift: '白班' },{ name: '', role: '', phone: '', baseDate: '2026-06-10', baseShift: '白班' },{ name: '', role: '', phone: '', baseDate: '2026-06-10', baseShift: '白班' }]
+            };
+        }
+
+        function saveShiftTeams(){ try { localStorage.setItem('shift_teams2', JSON.stringify(shiftTeams)); } catch(e) {} }
+        function saveShiftPeople(){ try { localStorage.setItem('shift_people2', JSON.stringify(shiftPeople)); } catch(e) {} }
+        function saveSpecialTeamConfig(){ try { localStorage.setItem('specialTeamConfig3', JSON.stringify(specialTeamConfig)); } catch(e) {} }
+
+        function getShiftForTeam(team, targetDate){
+            if(team.type === 'day') return '白班';
+            var cycle = team.type === '3shift' ? ['白班','夜班','休息'] : ['白班','夜班','休息','休息'];
+            var baseIndex = cycle.indexOf(team.baseShift);
+            if(baseIndex === -1) baseIndex = 0;
+            var base = new Date(team.baseDate);
+            var target = new Date(targetDate);
+            base.setHours(0,0,0,0);
+            target.setHours(0,0,0,0);
+            var diff = Math.floor((target - base) / 86400000);
+            var idx = (baseIndex + diff) % cycle.length;
+            idx = (idx + cycle.length) % cycle.length;
+            return cycle[idx];
+        }
+
+        function getSpecialTeamWorkers(dateStr){
+            if(!specialTeamConfig.enabled) return [];
+            var four = specialTeamConfig.fourPerson;
+            if(!four.name) return [];
+            var fourTeam = { type: '4shift', baseDate: four.baseDate, baseShift: four.baseShift };
+            var fourShift = getShiftForTeam(fourTeam, dateStr);
+            var workers = [];
+            if(fourShift !== '休息'){
+                workers.push({
+                    key: 'special_four',
+                    name: four.name,
+                    role: four.role || '',
+                    phone: four.phone || '',
+                    shift: fourShift,
+                    teamName: specialTeamConfig.teamName,
+                    teamType: 'special',
+                    isSpecial: true,
+                    specialType: 'four'
+                });
+                for (var i = 0; i < specialTeamConfig.threePersons.length; i++) {
+                    var p = specialTeamConfig.threePersons[i];
+                    if(!p.name) continue;
+                    var threeTeam = { type: '3shift', baseDate: p.baseDate, baseShift: p.baseShift };
+                    var shift = getShiftForTeam(threeTeam, dateStr);
+                    if(shift !== '休息' && shift === fourShift) continue;
+                    if(shift !== '休息') {
+                        workers.push({
+                            key: 'special_three_' + i,
+                            name: p.name,
+                            role: p.role || '',
+                            phone: p.phone || '',
+                            shift: shift,
+                            teamName: specialTeamConfig.teamName,
+                            teamType: 'special',
+                            isSpecial: true,
+                            specialType: 'three',
+                            index: i
+                        });
+                    }
+                }
+            } else {
+                for (var i = 0; i < specialTeamConfig.threePersons.length; i++) {
+                    var p = specialTeamConfig.threePersons[i];
+                    if(!p.name) continue;
+                    var threeTeam = { type: '3shift', baseDate: p.baseDate, baseShift: p.baseShift };
+                    var shift = getShiftForTeam(threeTeam, dateStr);
+                    if(shift !== '休息') {
+                        workers.push({
+                            key: 'special_three_' + i,
+                            name: p.name,
+                            role: p.role || '',
+                            phone: p.phone || '',
+                            shift: shift,
+                            teamName: specialTeamConfig.teamName,
+                            teamType: 'special',
+                            isSpecial: true,
+                            specialType: 'three',
+                            index: i
+                        });
+                    }
+                }
+            }
+            return workers;
+        }
+
+        function getAllWorkers(dateStr){
+            var workers = [];
+            workers.push.apply(workers, getSpecialTeamWorkers(dateStr));
+            for (var i = 0; i < shiftTeams.length; i++) {
+                var team = shiftTeams[i];
+                var shift = getShiftForTeam(team, dateStr);
+                if(shift !== '休息'){
+                    for (var j = 0; j < shiftPeople.length; j++) {
+                        var person = shiftPeople[j];
+                        if(person.teamId === team.id){
+                            workers.push({
+                                key: 'normal_' + person.id,
+                                id: person.id,
+                                name: person.name,
+                                role: person.role || '',
+                                phone: person.phone || '',
+                                shift: shift,
+                                teamName: team.name,
+                                teamType: team.type,
+                                isSpecial: false
+                            });
+                        }
+                    }
+                }
+            }
+            return workers;
+        }
+
+        function openPersonEdit(key) {
+            var allWorkers = getAllWorkers(document.getElementById('shiftDate').value);
+            var person = null;
+            for (var i = 0; i < allWorkers.length; i++) {
+                if (allWorkers[i].key === key) { person = allWorkers[i]; break; }
+            }
+            if (!person) { alert('未找到该人员'); return; }
+
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            var isSpecial = person.isSpecial;
+            var teamOptionsHtml = '';
+            if (!isSpecial) {
+                teamOptionsHtml = shiftTeams.map(function(t){
+                    return '<option value="' + t.id + '" ' + (t.name === person.teamName ? 'selected' : '') + '>' + escapeHtml(t.name) + '</option>';
+                }).join('');
+            }
+
+            modal.innerHTML = `
+                <div class="modal-container">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>${isSpecial ? '编辑特殊班长' : '编辑人员'}</h3>
+                    <div class="modal-field"><label>姓名</label><input type="text" id="editPersonName" value="${escapeHtml(person.name)}"></div>
+                    ${isSpecial ? '<div class="modal-field"><label>班组</label><input type="text" value="' + escapeHtml(person.teamName) + '" disabled style="background:#f0f0f0;"></div>' :
+                    '<div class="modal-field"><label>班组</label><select id="editPersonTeam">' + teamOptionsHtml + '</select></div>'}
+                    <div class="modal-field"><label>职务</label><input type="text" id="editPersonRole" value="${escapeHtml(person.role)}"></div>
+                    <div class="modal-field"><label>电话</label><input type="text" id="editPersonPhone" value="${escapeHtml(person.phone)}"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="savePersonBtn">保存</button>
+                        <button class="btn-del" id="deletePersonBtn">删除</button>
+                        <button class="btn-edit" id="cancelPersonBtn">取消</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('savePersonBtn').addEventListener('click', function() {
+                var name = document.getElementById('editPersonName').value.trim();
+                var role = document.getElementById('editPersonRole').value.trim();
+                var phone = document.getElementById('editPersonPhone').value.trim();
+                if (!name) { alert('姓名不能为空'); return; }
+
+                if (isSpecial) {
+                    if (person.specialType === 'four') {
+                        specialTeamConfig.fourPerson.name = name;
+                        specialTeamConfig.fourPerson.role = role;
+                        specialTeamConfig.fourPerson.phone = phone;
+                    } else if (person.specialType === 'three') {
+                        var idx = person.index;
+                        if (idx !== undefined && specialTeamConfig.threePersons[idx]) {
+                            specialTeamConfig.threePersons[idx].name = name;
+                            specialTeamConfig.threePersons[idx].role = role;
+                            specialTeamConfig.threePersons[idx].phone = phone;
+                        } else {
+                            alert('数据异常');
+                            return;
+                        }
+                    }
+                    saveSpecialTeamConfig();
+                } else {
+                    var newTeamId = document.getElementById('editPersonTeam').value;
+                    var found = false;
+                    for (var i = 0; i < shiftPeople.length; i++) {
+                        if (shiftPeople[i].id === person.id) {
+                            shiftPeople[i].name = name;
+                            shiftPeople[i].role = role;
+                            shiftPeople[i].phone = phone;
+                            shiftPeople[i].teamId = newTeamId;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) { alert('数据异常'); return; }
+                    saveShiftPeople();
+                }
+                document.body.removeChild(modal);
+                refreshShiftDisplay();
+                alert('已保存');
+            });
+
+            document.getElementById('deletePersonBtn').addEventListener('click', function() {
+                if (!confirm('确定删除该人员吗？')) return;
+                if (isSpecial) {
+                    if (person.specialType === 'four') {
+                        specialTeamConfig.fourPerson.name = '';
+                        specialTeamConfig.fourPerson.role = '';
+                        specialTeamConfig.fourPerson.phone = '';
+                    } else if (person.specialType === 'three') {
+                        var idx = person.index;
+                        if (idx !== undefined && specialTeamConfig.threePersons[idx]) {
+                            specialTeamConfig.threePersons[idx].name = '';
+                            specialTeamConfig.threePersons[idx].role = '';
+                            specialTeamConfig.threePersons[idx].phone = '';
+                        }
+                    }
+                    saveSpecialTeamConfig();
+                } else {
+                    shiftPeople = shiftPeople.filter(function(p) { return p.id !== person.id; });
+                    saveShiftPeople();
+                }
+                document.body.removeChild(modal);
+                refreshShiftDisplay();
+                alert('已删除');
+            });
+
+            document.getElementById('cancelPersonBtn').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+        }
+
+        function renderDayWorkers(dateStr){
+            var workers = getAllWorkers(dateStr);
+            var dayWorkers = workers.filter(function(w){ return w.teamType === 'day' && w.shift === '白班'; });
+            dayWorkers.sort(function(a,b){
+                var rA = a.role || '';
+                var rB = b.role || '';
+                if(rA !== rB) return rA.localeCompare(rB);
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            var container = document.getElementById('shiftDayContainer');
+            if(dayWorkers.length === 0){ container.innerHTML = '<div class="empty-tip">当天无常白人员</div>'; return; }
+            var groupMap = {};
+            dayWorkers.forEach(function(w){
+                if(!groupMap[w.teamName]) groupMap[w.teamName] = [];
+                groupMap[w.teamName].push(w);
+            });
+            var html = '';
+            for(var teamName in groupMap){
+                var members = groupMap[teamName];
+                html += '<div class="shift-block"><div class="shift-block-title">' + escapeHtml(teamName) + '</div><div class="person-grid">';
+                members.forEach(function(m){
+                    html += `<div class="person-card" onclick="openPersonEdit('${m.key}')">
+                        <div class="top-row">
+                            <span class="name">${escapeHtml(m.name)}</span>
+                            ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" class="phone-link" onclick="event.stopPropagation();">📞 ${escapeHtml(m.phone)}</a>` : '<span></span>'}
+                        </div>
+                        <div class="role">${escapeHtml(m.role||'')}</div>
+                    </div>`;
+                });
+                html += '</div></div>';
+            }
+            container.innerHTML = html;
+        }
+
+        function renderShiftWorkers(dateStr){
+            var workers = getAllWorkers(dateStr);
+            var shiftWorkers = workers.filter(function(w){ return w.teamType !== 'day' && (w.shift === '白班' || w.shift === '夜班'); });
+            var dayShift = shiftWorkers.filter(function(w){ return w.shift === '白班'; });
+            var nightShift = shiftWorkers.filter(function(w){ return w.shift === '夜班'; });
+            function getRolePriority(role){
+                if(role && role.indexOf('值班长') !== -1) return 1;
+                if(role && role.indexOf('班长') !== -1) return 2;
+                return 3;
+            }
+            function sortGroupAndRender(arr){
+                arr.sort(function(a,b){
+                    var priA = getRolePriority(a.role);
+                    var priB = getRolePriority(b.role);
+                    if(priA !== priB) return priA - priB;
+                    var rA = a.role || '';
+                    var rB = b.role || '';
+                    if(rA !== rB) return rA.localeCompare(rB);
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+                var groupMap = {};
+                arr.forEach(function(w){
+                    if(!groupMap[w.teamName]) groupMap[w.teamName] = [];
+                    groupMap[w.teamName].push(w);
+                });
+                var html = '';
+                for(var teamName in groupMap){
+                    var members = groupMap[teamName];
+                    html += '<div class="shift-block"><div class="shift-block-title">' + escapeHtml(teamName) + '</div><div class="person-grid">';
+                    members.forEach(function(m){
+                        html += `<div class="person-card" onclick="openPersonEdit('${m.key}')">
+                            <div class="top-row">
+                                <span class="name">${escapeHtml(m.name)}</span>
+                                ${m.phone ? `<a href="tel:${escapeHtml(m.phone)}" class="phone-link" onclick="event.stopPropagation();">📞 ${escapeHtml(m.phone)}</a>` : '<span></span>'}
+                            </div>
+                            <div class="role">${escapeHtml(m.role||'')}</div>
+                        </div>`;
+                    });
+                    html += '</div></div>';
+                }
+                return html;
+            }
+            var html = '';
+            if(dayShift.length > 0) html += '<div class="shift-block"><div class="shift-block-title" style="background:#d4edda;">白班人员</div>' + sortGroupAndRender(dayShift) + '</div>';
+            if(nightShift.length > 0) html += '<div class="shift-block"><div class="shift-block-title" style="background:#fff3cd;">夜班人员</div>' + sortGroupAndRender(nightShift) + '</div>';
+            if(dayShift.length === 0 && nightShift.length === 0) html = '<div class="empty-tip">当天无倒班人员</div>';
+            document.getElementById('shiftShiftContainer').innerHTML = html;
+        }
+
+        function refreshShiftDisplay(){
+            var dateStr = document.getElementById('shiftDate').value;
+            if(!dateStr) return;
+            renderDayWorkers(dateStr);
+            renderShiftWorkers(dateStr);
+        }
+
+        function switchShiftSubtab(tab){
+            var tabs = document.querySelectorAll('.shift-subtab');
+            var dayContainer = document.getElementById('shiftDayContainer');
+            var shiftContainer = document.getElementById('shiftShiftContainer');
+            tabs.forEach(function(t){ t.classList.remove('active'); });
+            document.querySelector('.shift-subtab[data-subtab="' + tab + '"]').classList.add('active');
+            if(tab === 'day'){ dayContainer.style.display = 'block'; shiftContainer.style.display = 'none'; }
+            else { dayContainer.style.display = 'none'; shiftContainer.style.display = 'block'; }
+        }
+
+        function setTodayShift(){
+            var now = new Date();
+            var nowStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+            document.getElementById('shiftDate').value = nowStr;
+            refreshShiftDisplay();
+        }
+        function changeDate(delta){
+            var inp = document.getElementById('shiftDate');
+            var d = new Date(inp.value);
+            if(isNaN(d.getTime())) d = new Date();
+            d.setDate(d.getDate() + delta);
+            inp.value = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+            refreshShiftDisplay();
+        }
+
+        // ============================================================
+        // 模块6：配置模块（班组/人员/特殊班组）
+        // ============================================================
+        function showTeamManager(){
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>班组排班配置</h3>
+                    <div id="teamConfigModalList"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="addTeamModalBtn">添加班组</button>
+                        <button class="btn-del" id="closeTeamModalBtn">关闭</button>
+                    </div>
+                    <div class="inline-hint">基准班次可选：白班 / 夜班 / 休息</div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            function refreshTeamList(){
+                var container = document.getElementById('teamConfigModalList');
+                if(container){
+                    container.innerHTML = shiftTeams.map(function(team){
+                        var typeName = team.type === '3shift' ? '三班倒' : (team.type === '4shift' ? '四班倒' : '常白班');
+                        return '<div class="team-config-item"><strong>' + escapeHtml(team.name) + '</strong> (' + typeName + ')<br>基准: ' + team.baseDate + ' ' + team.baseShift + '<div><button class="btn-sm btn-edit" data-id="' + team.id + '">编辑</button><button class="btn-sm btn-del" data-id="' + team.id + '">删除</button></div></div>';
+                    }).join('');
+                    container.querySelectorAll('.btn-edit').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                            var id = this.dataset.id;
+                            var team = null;
+                            for (var i = 0; i < shiftTeams.length; i++) {
+                                if (shiftTeams[i].id === id) { team = shiftTeams[i]; break; }
+                            }
+                            if(team){
+                                var newName = prompt('班组名称', team.name);
+                                if(newName && newName.trim()) team.name = newName.trim();
+                                var newType = prompt('类型 (3shift/4shift/day)', team.type);
+                                if(['3shift','4shift','day'].indexOf(newType) !== -1) team.type = newType;
+                                var newDate = prompt('基准日期 (YYYY-MM-DD)', team.baseDate);
+                                if(/^\d{4}-\d{2}-\d{2}$/.test(newDate)) team.baseDate = newDate;
+                                var newShift = prompt('基准班次 (白班/夜班/休息)', team.baseShift);
+                                if(['白班','夜班','休息'].indexOf(newShift) !== -1) team.baseShift = newShift;
+                                saveShiftTeams();
+                                refreshTeamList();
+                                refreshShiftDisplay();
+                            }
+                        });
+                    });
+                    container.querySelectorAll('.btn-del').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                            if(confirm('删除班组会删除其下所有人员')){
+                                var id = this.dataset.id;
+                                shiftTeams = shiftTeams.filter(function(t){ return t.id !== id; });
+                                shiftPeople = shiftPeople.filter(function(p){ return p.teamId !== id; });
+                                saveShiftTeams();
+                                saveShiftPeople();
+                                refreshTeamList();
+                                refreshShiftDisplay();
+                            }
+                        });
+                    });
+                }
+            }
+            refreshTeamList();
+
+            document.getElementById('addTeamModalBtn').addEventListener('click', function(){
+                var name = prompt('班组名称');
+                if(!name) return;
+                var type = prompt('类型 (3shift/4shift/day)', '3shift');
+                if(['3shift','4shift','day'].indexOf(type) === -1) return;
+                var baseDate = prompt('基准日期 (YYYY-MM-DD)', new Date().toISOString().slice(0,10));
+                if(!/^\d{4}-\d{2}-\d{2}$/.test(baseDate)) return;
+                var baseShift = prompt('基准班次 (白班/夜班/休息)', '白班');
+                if(['白班','夜班','休息'].indexOf(baseShift) === -1) baseShift = '白班';
+                shiftTeams.push({ id: 't'+Date.now(), name: name, type: type, baseDate: baseDate, baseShift: baseShift });
+                saveShiftTeams();
+                refreshTeamList();
+                refreshShiftDisplay();
+            });
+
+            document.getElementById('closeTeamModalBtn').addEventListener('click', function(){
+                document.body.removeChild(modal);
+            });
+        }
+
+        function showPersonnelManager(){
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            var teamOptions = shiftTeams.map(function(t){
+                return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>';
+            }).join('');
+            modal.innerHTML = `
+                <div class="modal-container" style="max-width: 600px; padding: 14px;">
+                    <div class="close-modal" style="right: 14px; top: 8px;" onclick="closeAnyModal(this)">&times;</div>
+                    <h3 style="margin-top: 0;">普通人员管理</h3>
+                    <div class="personnel-manager">
+                        <div class="personnel-form">
+                            <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                                <div class="form-field"><label>姓名</label><input type="text" id="modalPersonName" placeholder="姓名"></div>
+                                <div class="form-field"><label>所属班组</label><select id="modalPersonTeam">${teamOptions}</select></div>
+                                <div class="form-field"><label>职务/工种</label><input type="text" id="modalPersonRole" placeholder="职务"></div>
+                                <div class="form-field"><label>手机号</label><input type="tel" id="modalPersonPhone" placeholder="手机号"></div>
+                                <input type="hidden" id="modalEditId">
+                            </div>
+                            <div class="form-buttons" style="display:flex; gap:8px;">
+                                <button class="btn-add" id="modalSaveBtn">保存</button>
+                                <button class="btn-del" id="modalCancelBtn">关闭</button>
+                            </div>
+                        </div>
+                        <div style="margin: 4px 0 2px;"><strong>现有人员</strong></div>
+                        <div id="modalPeopleList" class="personnel-list" style="max-height:400px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;"></div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            function refreshPeopleList(){
+                var listDiv = document.getElementById('modalPeopleList');
+                if(listDiv){
+                    var html = shiftPeople.map(function(p){
+                        var team = null;
+                        for (var i = 0; i < shiftTeams.length; i++) {
+                            if (shiftTeams[i].id === p.teamId) { team = shiftTeams[i]; break; }
+                        }
+                        return '<div class="personnel-item" style="background:white; border:1px solid #e2e8f0; border-radius:14px; padding:8px; display:flex; justify-content:space-between; align-items:center; gap:6px; flex-wrap:wrap;"><div class="info"><strong>' + escapeHtml(p.name) + '</strong><div class="detail" style="font-size:11px; color:#5b6e8c;">' + (team ? escapeHtml(team.name) : '无班组') + ' | ' + escapeHtml(p.role||'') + ' | ' + (p.phone ? escapeHtml(p.phone) : '无电话') + '</div></div><div class="actions" style="display:flex; gap:4px;"><button class="btn-sm btn-edit" data-id="' + p.id + '">编辑</button><button class="btn-sm btn-del" data-id="' + p.id + '">删除</button></div></div>';
+                    }).join('');
+                    listDiv.innerHTML = html || '<div>暂无人员</div>';
+                    listDiv.querySelectorAll('.btn-edit').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                            var id = this.dataset.id;
+                            var p = null;
+                            for (var i = 0; i < shiftPeople.length; i++) {
+                                if (shiftPeople[i].id === id) { p = shiftPeople[i]; break; }
+                            }
+                            if(p){
+                                document.getElementById('modalPersonName').value = p.name;
+                                document.getElementById('modalPersonTeam').value = p.teamId;
+                                document.getElementById('modalPersonRole').value = p.role || '';
+                                document.getElementById('modalPersonPhone').value = p.phone || '';
+                                document.getElementById('modalEditId').value = p.id;
+                                document.querySelector('.personnel-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        });
+                    });
+                    listDiv.querySelectorAll('.btn-del').forEach(function(btn){
+                        btn.addEventListener('click', function(){
+                            if(confirm('删除人员？')){
+                                var id = this.dataset.id;
+                                shiftPeople = shiftPeople.filter(function(x){ return x.id !== id; });
+                                saveShiftPeople();
+                                refreshPeopleList();
+                                refreshShiftDisplay();
+                            }
+                        });
+                    });
+                }
+            }
+            refreshPeopleList();
+
+            document.getElementById('modalSaveBtn').addEventListener('click', function(){
+                var name = document.getElementById('modalPersonName').value.trim();
+                var teamId = document.getElementById('modalPersonTeam').value;
+                var role = document.getElementById('modalPersonRole').value.trim();
+                var phone = document.getElementById('modalPersonPhone').value.trim();
+                if(!name || !teamId) { alert('请填写姓名和班组'); return; }
+                var editId = document.getElementById('modalEditId').value;
+                if(editId){
+                    for (var i = 0; i < shiftPeople.length; i++) {
+                        if (shiftPeople[i].id === editId) {
+                            shiftPeople[i].name = name;
+                            shiftPeople[i].teamId = teamId;
+                            shiftPeople[i].role = role;
+                            shiftPeople[i].phone = phone;
+                            break;
+                        }
+                    }
+                } else {
+                    shiftPeople.push({ id: Date.now().toString(), name: name, teamId: teamId, role: role, phone: phone });
+                }
+                saveShiftPeople();
+                document.getElementById('modalPersonName').value = '';
+                document.getElementById('modalPersonRole').value = '';
+                document.getElementById('modalPersonPhone').value = '';
+                document.getElementById('modalEditId').value = '';
+                refreshPeopleList();
+                refreshShiftDisplay();
+                alert('保存成功');
+            });
+
+            document.getElementById('modalCancelBtn').addEventListener('click', function(){
+                document.body.removeChild(modal);
+            });
+        }
+
+        function showSpecialManager(){
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container" style="max-width:550px;">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>特殊班组配置</h3>
+                    <div class="modal-field"><label>班组名称</label><input id="spTeamName" value="${escapeHtml(specialTeamConfig.teamName)}"></div>
+                    <hr><h4>四班倒班长</h4>
+                    <div class="flex-row"><div class="flex-col"><label>姓名</label><input id="spFourName" value="${escapeHtml(specialTeamConfig.fourPerson.name)}"></div>
+                    <div class="flex-col"><label>职务</label><input id="spFourRole" value="${escapeHtml(specialTeamConfig.fourPerson.role)}"></div>
+                    <div class="flex-col"><label>电话</label><input id="spFourPhone" value="${escapeHtml(specialTeamConfig.fourPerson.phone)}"></div></div>
+                    <div class="flex-row"><div class="flex-col"><label>基准日期</label><input type="date" id="spFourBaseDate" value="${specialTeamConfig.fourPerson.baseDate}"></div>
+                    <div class="flex-col"><label>基准班次</label><select id="spFourBaseShift"><option value="白班" ${specialTeamConfig.fourPerson.baseShift==='白班'?'selected':''}>白班</option><option value="夜班" ${specialTeamConfig.fourPerson.baseShift==='夜班'?'selected':''}>夜班</option><option value="休息" ${specialTeamConfig.fourPerson.baseShift==='休息'?'selected':''}>休息</option></select></div></div>
+                    <hr><h4>三班倒班长（3人）</h4>
+                    <div id="spThreeContainer"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="saveSpecialBtn">保存</button>
+                        <button class="btn-del" id="cancelSpecialBtn">关闭</button>
+                    </div>
+                    <div class="inline-hint">规则：四班倒班长上班时，三班倒中同班次的人休息</div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            function renderThree(){
+                var container = document.getElementById('spThreeContainer');
+                if(container){
+                    var html = '';
+                    for(var i=0; i<3; i++){
+                        var p = specialTeamConfig.threePersons[i] || {};
+                        html += '<div class="team-config-item"><label>班长' + (i+1) + '姓名</label><input class="threeName" data-idx="' + i + '" value="' + escapeHtml(p.name) + '"><label>职务</label><input class="threeRole" data-idx="' + i + '" value="' + escapeHtml(p.role) + '"><label>电话</label><input class="threePhone" data-idx="' + i + '" value="' + escapeHtml(p.phone) + '"><div class="flex-row"><div class="flex-col"><label>基准日期</label><input class="threeBaseDate" data-idx="' + i + '" type="date" value="' + (p.baseDate||'2026-06-10') + '"></div><div class="flex-col"><label>基准班次</label><select class="threeBaseShift" data-idx="' + i + '"><option value="白班" ' + (p.baseShift==='白班'?'selected':'') + '>白班</option><option value="夜班" ' + (p.baseShift==='夜班'?'selected':'') + '>夜班</option><option value="休息" ' + (p.baseShift==='休息'?'selected':'') + '>休息</option></select></div></div></div>';
+                    }
+                    container.innerHTML = html;
+                }
+            }
+            renderThree();
+
+            document.getElementById('saveSpecialBtn').addEventListener('click', function(){
+                var teamName = document.getElementById('spTeamName').value.trim();
+                if(!teamName) return alert('请填写班组名称');
+                var fourName = document.getElementById('spFourName').value.trim();
+                if(!fourName) return alert('请填写四班倒班长姓名');
+                var fourRole = document.getElementById('spFourRole').value.trim();
+                var fourPhone = document.getElementById('spFourPhone').value.trim();
+                var fourBaseDate = document.getElementById('spFourBaseDate').value;
+                var fourBaseShift = document.getElementById('spFourBaseShift').value;
+                var threePersons = [];
+                for(var i=0; i<3; i++){
+                    var name = document.querySelector('.threeName[data-idx="' + i + '"]').value.trim();
+                    if(!name) return alert('请填写三班倒班长' + (i+1) + '姓名');
+                    var role = document.querySelector('.threeRole[data-idx="' + i + '"]').value.trim();
+                    var phone = document.querySelector('.threePhone[data-idx="' + i + '"]').value.trim();
+                    var baseDate = document.querySelector('.threeBaseDate[data-idx="' + i + '"]').value;
+                    var baseShift = document.querySelector('.threeBaseShift[data-idx="' + i + '"]').value;
+                    threePersons.push({ name: name, role: role, phone: phone, baseDate: baseDate, baseShift: baseShift });
+                }
+                specialTeamConfig.enabled = true;
+                specialTeamConfig.teamName = teamName;
+                specialTeamConfig.fourPerson = { name: fourName, role: fourRole, phone: fourPhone, baseDate: fourBaseDate, baseShift: fourBaseShift };
+                specialTeamConfig.threePersons = threePersons;
+                saveSpecialTeamConfig();
+                document.body.removeChild(modal);
+                refreshShiftDisplay();
+                alert('已保存');
+            });
+
+            document.getElementById('cancelSpecialBtn').addEventListener('click', function(){
+                document.body.removeChild(modal);
+            });
+        }
+
+        // ============================================================
+        // 模块7：智能识别与配置导出
+        // ============================================================
+        window.showAddDriverDialog = function(driverName, phone) {
+            var teamOptions = shiftTeams.map(function(t){
+                return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>';
+            }).join('');
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container" style="max-width:500px;">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>添加司机到人员库</h3>
+                    <div class="modal-field"><label>姓名</label><input type="text" id="driverName" value="${escapeHtml(driverName)}" readonly style="background:#f0f0f0;"></div>
+                    <div class="modal-field"><label>电话</label><input type="text" id="driverPhone" value="${escapeHtml(phone)}" readonly style="background:#f0f0f0;"></div>
+                    <div class="modal-field"><label>选择班组</label><select id="driverTeam">${teamOptions}</select></div>
+                    <div class="modal-field"><label>职务/工种</label><input type="text" id="driverRole" placeholder="例如：司机" value="司机"></div>
+                    <div class="modal-buttons">
+                        <button class="btn-add" id="confirmAddDriver">保存到人员库</button>
+                        <button class="btn-del" id="cancelAddDriver">取消</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            document.getElementById('confirmAddDriver').addEventListener('click', function(){
+                var teamId = document.getElementById('driverTeam').value;
+                var role = document.getElementById('driverRole').value.trim() || '司机';
+                if(!teamId) { alert('请选择班组'); return; }
+                var exists = false;
+                for (var i = 0; i < shiftPeople.length; i++) {
+                    if (shiftPeople[i].name === driverName && shiftPeople[i].phone === phone) {
+                        exists = true; break;
+                    }
+                }
+                if(exists) { alert('该司机已存在人员库中，无需重复添加'); document.body.removeChild(modal); return; }
+                shiftPeople.push({ id: Date.now().toString(), name: driverName, teamId: teamId, role: role, phone: phone });
+                saveShiftPeople();
+                alert('司机 ' + driverName + ' 已添加到人员库');
+                document.body.removeChild(modal);
+                refreshShiftDisplay();
+            });
+            document.getElementById('cancelAddDriver').addEventListener('click', function(){ document.body.removeChild(modal); });
+        };
+
+        function parseMessage(text){
+            var result = { device: '', fault: '', workTime: '', driver: '', phone: '', location: '' };
+            var lines = text.split(/\r?\n/);
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if(line.startsWith('车号') || line.startsWith('车号：') || line.startsWith('车号:')) {
+                    var match = line.match(/[车号]+[：:]\s*(.+)/);
+                    if(match) result.device = match[1].trim();
+                } else if(line.startsWith('故障') || line.startsWith('故障：') || line.startsWith('故障:')) {
+                    var match = line.match(/[故障]+[：:]\s*(.+)/);
+                    if(match) result.fault = match[1].trim();
+                } else if(line.startsWith('工作时间') || line.startsWith('工作时间：') || line.startsWith('工作时间:')) {
+                    var match = line.match(/[工作时间]+[：:]\s*(.+)/);
+                    if(match) result.workTime = match[1].trim();
+                } else if(line.startsWith('司机') || line.startsWith('司机：') || line.startsWith('司机:')) {
+                    var match = line.match(/[司机]+[：:]\s*(.+)/);
+                    if(match) result.driver = match[1].trim();
+                } else if(line.startsWith('电话') || line.startsWith('电话：') || line.startsWith('电话:')) {
+                    var match = line.match(/[电话]+[：:]\s*(.+)/);
+                    if(match) result.phone = match[1].trim();
+                } else if(line.startsWith('位置') || line.startsWith('位置：') || line.startsWith('位置:')) {
+                    var match = line.match(/[位置]+[：:]\s*(.+)/);
+                    if(match) result.location = match[1].trim();
+                }
+            }
+            return result;
+        }
+
+        function parseAndFill(){
+            var textarea = document.getElementById('recognizeText');
+            var raw = textarea.value;
+            if(!raw.trim()){ alert('请粘贴故障消息'); return; }
+            var parsed = parseMessage(raw);
+            if(parsed.device) document.getElementById('deviceInput').value = parsed.device;
+            if(parsed.fault) document.getElementById('faultInput').value = parsed.fault;
+            var resultDiv = document.getElementById('parseResult');
+            resultDiv.innerHTML = '';
+            if(parsed.driver && parsed.phone){
+                resultDiv.innerHTML = '<div>✅ 识别到司机：' + escapeHtml(parsed.driver) + ' 电话：' + escapeHtml(parsed.phone) + ' <button class="btn-sm btn-add" onclick="showAddDriverDialog(\'' + escapeHtml(parsed.driver) + '\',\'' + escapeHtml(parsed.phone) + '\')">添加到人员库</button></div>';
+            } else if(parsed.driver){
+                resultDiv.innerHTML = '<div>识别到司机：' + escapeHtml(parsed.driver) + '（无电话）</div>';
+            } else if(parsed.phone){
+                resultDiv.innerHTML = '<div>识别到电话：' + escapeHtml(parsed.phone) + '</div>';
+            }
+            if(parsed.workTime) resultDiv.innerHTML += '<div>🕒 工作时间：' + escapeHtml(parsed.workTime) + '</div>';
+            if(parsed.location) resultDiv.innerHTML += '<div>📍 位置：' + escapeHtml(parsed.location) + '</div>';
+            if(!parsed.device && !parsed.fault) alert('未能识别出车号或故障内容，请手动填写');
+        }
+
+        function clearRecognize(){
+            document.getElementById('recognizeText').value = '';
+            document.getElementById('parseResult').innerHTML = '';
+        }
+
+        function showGlobalSettings() {
+            var modal = document.createElement('div');
+            modal.className = 'modal-mask';
+            modal.innerHTML = `
+                <div class="modal-container" style="max-width: 350px;">
+                    <div class="close-modal" onclick="closeAnyModal(this)">&times;</div>
+                    <h3>设置</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="btn-add" onclick="exportConfig(); closeAnyModal(this);">导出配置</button>
+                        <button class="btn-edit" onclick="copyConfig(); closeAnyModal(this);">复制配置</button>
+                        <button class="btn-edit" onclick="triggerImport(); closeAnyModal(this);">导入配置</button>
+                        <hr>
+                        <button class="btn-edit" onclick="showPersonnelManager(); closeAnyModal(this);">人员配置</button>
+                        <button class="btn-edit" onclick="showTeamManager(); closeAnyModal(this);">班组配置</button>
+                        <button class="btn-move" onclick="showSpecialManager(); closeAnyModal(this);">特殊班组配置</button>
+                        <button class="btn-del" onclick="closeAnyModal(this);">关闭</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function exportConfig() {
+            var config = { version: '1.1.0', exportDate: new Date().toISOString(), faults: faults, customOptions: customOptions, shiftTeams: shiftTeams, shiftPeople: shiftPeople, specialTeamConfig: specialTeamConfig };
+            var dataStr = JSON.stringify(config, null, 2);
+            var blob = new Blob([dataStr], {type: 'application/json'});
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '设备台账备份_v1.1.0_' + new Date().toISOString().slice(0,19).replace(/:/g, '-') + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert('配置已导出');
+        }
+
+        function copyConfig() {
+            var config = { version: '1.1.0', exportDate: new Date().toISOString(), faults: faults, customOptions: customOptions, shiftTeams: shiftTeams, shiftPeople: shiftPeople, specialTeamConfig: specialTeamConfig };
+            var dataStr = JSON.stringify(config, null, 2);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(dataStr).then(function(){ alert('配置已复制到剪贴板'); }).catch(function(){ fallbackCopy(dataStr); });
+            } else {
+                fallbackCopy(dataStr);
+            }
+        }
+
+        var importFileInput = null;
+        function triggerImport() {
+            if (!importFileInput) {
+                importFileInput = document.createElement('input');
+                importFileInput.type = 'file';
+                importFileInput.accept = '.json';
+                importFileInput.style.display = 'none';
+                document.body.appendChild(importFileInput);
+                importFileInput.onchange = function(e) {
+                    if (e.target.files.length > 0) {
+                        var file = e.target.files[0];
+                        var reader = new FileReader();
+                        reader.onload = function(ev) {
+                            try {
+                                var config = JSON.parse(ev.target.result);
+                                if (config.faults !== undefined) { faults = config.faults; saveAll(); }
+                                if (config.customOptions !== undefined) { customOptions = config.customOptions; saveOptions(); }
+                                if (config.shiftTeams !== undefined) { shiftTeams = config.shiftTeams; saveShiftTeams(); }
+                                if (config.shiftPeople !== undefined) { shiftPeople = config.shiftPeople; saveShiftPeople(); }
+                                if (config.specialTeamConfig !== undefined) { specialTeamConfig = config.specialTeamConfig; saveSpecialTeamConfig(); }
+                                alert('导入成功，页面将刷新');
+                                location.reload();
+                            } catch(err) { alert('配置文件格式错误'); }
+                        };
+                        reader.readAsText(file);
+                    }
+                    importFileInput.value = '';
+                };
+            }
+            importFileInput.click();
+        }
+
+        // ============================================================
+        // 模块8：页面切换与初始化
+        // ============================================================
+        function switchPanel(active){
+            document.getElementById('panelRepair').style.display = active === 'repair' ? 'block' : 'none';
+            document.getElementById('panelFixed').style.display = active === 'fixed' ? 'block' : 'none';
+            document.getElementById('panelHistory').style.display = active === 'history' ? 'block' : 'none';
+            document.getElementById('panelShift').style.display = active === 'shift' ? 'block' : 'none';
+            document.getElementById('reportSection').style.display = active === 'shift' ? 'none' : 'block';
+            document.querySelectorAll('.tab-btn').forEach(function(btn){ btn.classList.remove('active'); });
+            if(active === 'repair') document.getElementById('tabRepairBtn').classList.add('active');
+            if(active === 'fixed') document.getElementById('tabFixedBtn').classList.add('active');
+            if(active === 'history') { document.getElementById('tabHistoryBtn').classList.add('active'); searchHistory(); }
+            if(active === 'shift') { document.getElementById('tabShiftBtn').classList.add('active'); refreshShiftDisplay(); }
+        }
+
+        window.switchPanel = switchPanel;
+        window.addFault = addFault;
+        window.clearForm = clearForm;
+        window.openEditModal = openEditModal;
+        window.moveToFixed = moveToFixed;
+        window.moveToRepair = moveToRepair;
+        window.delFault = delFault;
+        window.generateReport = generateReport;
+        window.copyReport = copyReport;
+        window.clearAllData = clearAllData;
+        window.searchHistory = searchHistory;
+        window.resetHistorySearch = resetHistorySearch;
+        window.generateHistoryReport = generateHistoryReport;
+        window.addOption = addOption;
+        window.delOption = delOption;
+        window.toggleOptions = toggleOptions;
+        window.parseAndFill = parseAndFill;
+        window.clearRecognize = clearRecognize;
+        window.showAddDriverDialog = showAddDriverDialog;
+        window.switchShiftSubtab = switchShiftSubtab;
+        window.changeDate = changeDate;
+        window.setTodayShift = setTodayShift;
+        window.showTeamPickerModal = showTeamPickerModal;
+        window.showDevicePickerModal = showDevicePickerModal;
+        window.showGlobalSettings = showGlobalSettings;
+        window.exportConfig = exportConfig;
+        window.copyConfig = copyConfig;
+        window.triggerImport = triggerImport;
+        window.showPersonnelManager = showPersonnelManager;
+        window.showTeamManager = showTeamManager;
+        window.showSpecialManager = showSpecialManager;
+        window.openPersonEdit = openPersonEdit;
+
+        // 初始化
+        renderAllOptions();
+        renderAllPanels();
+        var today = new Date();
+        var todayStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+        document.getElementById('shiftDate').value = todayStr;
+        refreshShiftDisplay();
+        updateFilterDisplay();
+        searchHistory();
+        generateReport();
+    </script>
+</body>
+</html>
